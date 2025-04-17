@@ -1,0 +1,80 @@
+# median of three
+# selects the median of first, middle, and last elements of the partition used as the pivot
+def median_of_three(x, low, high):
+    # find middle index
+    mid = (low + high) // 2
+
+    # find median of first element
+    if x[low] > x[mid]:
+        x[low], x[mid] = x[mid], x[low]
+
+    # find median of middle element
+    if x[low] > x[high]:
+        x[low], x[high] = x[high], x[low]
+
+    # find median of last element
+    if x[mid] > x[high]:
+        x[mid], x[high] = x[high], x[mid]
+
+    # Use the median value (x[mid]) as the pivot
+    x[mid], x[high - 1] = x[high - 1], x[mid]
+    return x[high - 1]
+
+# insertion sort
+# when size of partition falls below 10 elements, use insertion sort instead of quick sort
+def insertion_sort(x):
+    for i in range(1, len(x)):
+        key = x[i]  # element to be inserted into sorted subarray
+        j = i - 1
+        # shift elements of sorted subarray that are greater than key, one position ahead
+        while j >= 0 and x[j] > key:
+            x[j + 1] = x[j]
+            j -= 1
+        x[j + 1] = key  # insert key element in correct position
+    return x
+
+# quick sort
+def quicksort(x, threshold=10):
+    # Use insertion sort if less than or equal to 10
+    if len(x) <= threshold:
+        return insertion_sort(x)
+
+    # use median-of-three to select good pivot for partitioning
+    low = 0
+    high = len(x) - 1
+    pivot = median_of_three(x, low, high)
+
+    # Partitioning step
+    i, j = low + 1, high - 2  # i starts just after low, j starts just before high - 1
+    while True:
+        # increment i until an element greater than or equal to pivot is found
+        while x[i] < pivot:
+            i += 1
+        # decrement j until an element less than or equal to pivot is found
+        while x[j] > pivot:
+            j -= 1
+        # if i and j havent crossed, swap i and j to check that
+        # elements less than pivot are on left, and elements greater than pivot are on right
+        if i < j:
+            x[i], x[j] = x[j], x[i]
+        else:
+            break  # i and j have crossed, partioning is done
+
+    # Put pivot in the right place
+    x[i], x[high - 1] = x[high - 1], x[i]
+
+    # Recursively sort the partitions
+    left_sorted = quicksort(x[:i])
+    right_sorted = quicksort(x[i + 1:])
+
+    # Return the concatenated sorted list
+    return left_sorted + [x[i]] + right_sorted
+
+# Test the optimized quicksort
+alist = [54, 26, 93, 17, 77, 31, 44, 55, 20]
+alist = quicksort(alist)
+print(alist)
+
+# Example Execution Result
+# Input: alist = [54, 26, 93, 17, 77, 31, 44, 55, 20]
+# Output: [17, 20, 26, 31, 44, 54, 55, 77, 93]
