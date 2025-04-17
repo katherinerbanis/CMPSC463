@@ -1,0 +1,157 @@
+import networkx as nx
+
+import matplotlib.pyplot as plt
+
+from datasets import load_dataset
+
+from collections import defaultdict
+
+from itertools import combinations
+
+import re
+
+import ssl
+
+import nltk
+
+ 
+
+# Disable SSL certificate verification (if needed)
+
+ssl._create_default_https_context = ssl._create_unverified_context
+
+ 
+
+# Download required NLTK resources
+
+nltk.download('punkt')
+
+nltk.download('stopwords')
+
+ 
+
+from nltk.corpus import stopwords
+
+from nltk.tokenize import word_tokenize
+
+from collections import Counter
+
+ 
+
+# Load the dataset (Amazon polarity dataset)
+
+dataset = load_dataset("amazon_polarity", split='train[:10000]')
+
+ 
+
+# Initialize a graph
+
+G = nx.Graph()
+
+ 
+
+# Preprocessing: Tokenize, remove stopwords and non-alphabetic tokens
+
+stop_words = set(stopwords.words('english'))
+
+ 
+
+def preprocess_text(text):
+
+    text = text.lower()  # convert to lowercase
+
+    text = re.sub(r'\W+', ' ', text)  # remove non-alphabetical characters
+
+    words = word_tokenize(text)
+
+    words = [word for word in words if word.isalpha()]  # keep only alphabetic tokens
+
+    words = [word for word in words if word not in stop_words]  # remove stopwords
+
+    return words
+
+ 
+
+# Count co-occurrences of word pairs across all reviews
+
+co_occurrence_counts = defaultdict(int)
+
+ 
+
+for review in dataset['content']:  # 'content' column contains the review text
+
+    words = preprocess_text(review)
+
+    unique_words = set(words)  # to ensure unique pairs
+
+    for pair in combinations(unique_words, 2):
+
+        co_occurrence_counts[frozenset(pair)] += 1
+
+ 
+
+# Add nodes and edges to the graph
+
+for word_pair, count in co_occurrence_counts.items():
+
+    word1, word2 = tuple(word_pair)
+
+    if not G.has_node(word1):
+
+        G.add_node(word1)
+
+    if not G.has_node(word2):
+
+        G.add_node(word2)
+
+    if G.has_edge(word1, word2):
+
+        G[word1][word2]['weight'] += count
+
+    else:
+
+        G.add_edge(word1, word2, weight=count)
+
+ 
+
+# Degree Centrality
+
+degree_centrality = nx.degree_centrality(G)
+
+ 
+
+# Get top 10 most central words by degree centrality
+
+top_10_central_words = sorted(degree_centrality.items(), key=lambda x: x[1], reverse=True)[:10]
+
+ 
+
+# Display top 10 most central words and their degrees
+
+top_10_words_with_degrees = [(word, G.degree(word)) for word, centrality in top_10_central_words]
+
+print("Top 10 most central words (Degree Centrality):")
+
+for word, degree in top_10_words_with_degrees:
+
+    print(f"{word}: {degree}")
+
+ 
+
+# Visualize a subgraph of the top 10 most central words
+
+subgraph = G.subgraph([word for word, _ in top_10_central_words])
+
+plt.figure(figsize=(10, 10))
+
+pos = nx.spring_layout(subgraph, seed=42)
+
+nx.draw(subgraph, pos, with_labels=True, node_size=3000, node_color="lightblue", font_size=10, font_weight='bold', edge_color='gray')
+
+labels = nx.get_edge_attributes(subgraph, 'weight')
+
+nx.draw_networkx_edge_labels(subgraph, pos, edge_labels=labels)
+
+plt.title("Subgraph of Top 10 Most Central Words")
+
+plt.show()
