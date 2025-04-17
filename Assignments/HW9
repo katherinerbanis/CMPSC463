@@ -1,0 +1,62 @@
+import numpy as np
+import pandas as pd
+import networkx as nx
+import matplotlib.pyplot as plt 
+
+# load dataset
+data = pd.read_csv('SeattleData_1.txt', sep=r'\s+', header=None)
+# directed graph
+G = nx.DiGraph()
+
+# add edges with latency as weights
+for i in range(len(data)):
+    for j in range(len(data.columns)):
+        if data.iloc[i, j] != 0:
+            G.add_edge(i, j, weight=data.iloc[i, j])
+
+# function to plot the graph
+def plot_graph(G):
+    pos = nx.spring_layout(G)
+    plt.figure(figsize=(12,8))
+ 
+    # draw nodes, edges, labels, edge weights
+    nx.draw_networkx_nodes(G, pos, node_size=700, node_color='red')
+    nx.draw_networkx_edges(G, pos, width=1.0, alpha=0.7, edge_color='black')
+    nx.draw_networkx_labels(G, pos, font_size=12)
+    edge_labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+
+    # graph title
+    plt.title("Seattle Network Graph")
+    plt.show()
+
+plot_graph(G)
+
+# function to find shortest graph using Dijkstra's algorithm
+def shortest_path(graph, source, target):
+    try:
+        path = nx.dijkstra_path(graph, source=source, target=target, weight='weight')
+        path_length = nx.dijkstra_path_length(graph, source=source, target=target, weight='weight')
+        return path, path_length
+    except nx.NetworkXNoPath:
+        return None, float('inf')
+ 
+# pairs of nodes to calculate shortest path
+pairs = [(55, 19), (19, 55), (81, 82), (82, 81)]
+ 
+# dictionary to store results
+results = {} 
+
+# calculate shortest path for pairs
+for (source, target) in pairs:
+    path, path_length = shortest_path(G, source, target)
+    results[(source, target)] = (path, path_length)
+
+for key, value in results.items():
+   print(f"Shortest path from {key[0]} to {key[1]}: {value[0]} with length {value[1]}")
+
+# Results:
+# Shortest path from 55 to 19: [55, 88, 7, 19] with length 0.07
+# Shortest path from 19 to 55: [19, 36, 55] with length 0.09999999999999999
+# Shortest path from 81 to 82: [81, 88, 7, 82] with length 0.12
+# Shortest path from 82 to 81: [82, 12, 10, 81] with length 0.13999999999999999
