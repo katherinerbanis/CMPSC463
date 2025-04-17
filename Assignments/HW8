@@ -1,0 +1,54 @@
+import networkx as nx
+import matplotlib.pyplot as plt
+
+prerequisites = {
+    "CMPSC 221": ["CMPSC 122", "CMPSC 132"],
+    "CMPSC 360": ["CMPSC 122", "CMPSC 132"],
+    "CMPSC 312": ["CMPSC 121"],
+    "CMPSC 430": [],  # No prerequisites listed
+    "CMPSC 460": ["CMPSC 312", "CMPSC 462"],
+    "CMPSC 462": ["MATH 141", "CMPSC 122", "CMPSC 360", "CMPSC 330"],
+    "CMPSC 463": ["CMPSC 462"],
+    "CMPSC 469": ["CMPSC 360"],
+    "CMPSC 470": ["CMPSC 221", "CMPSC 312", "CMPSC 462", "CMPSC 469"],
+    "CMPSC 472": ["CMPSC 312", "CMPSC 462"],
+    "CMPSC 487W": ["ENGL 202C", "CMPSC 221", "CMPSC 462"],
+    "CMPSC 488": ["CMPSC 487W"]
+}
+
+# build a directed graph based on the prereqs
+G = nx.DiGraph()
+
+# add nodes and edges based on prereqs
+for course, prereqs in prerequisites.items():
+    for prereq in prereqs:
+        G.add_edge(prereq, course)
+
+ # visualize the graph
+plt.figure(figsize=(10, 8))
+pos = nx.spring_layout(G, seed=42)
+nx.draw(G, pos, with_labels=True, font_weight='bold')
+plt.title("Course Prerequisite Graph")
+plt.show()
+
+# develop code for topological sorting
+def top_sort(graph):
+    try:
+        top_order = list(nx.topological_sort(graph))
+        return top_order
+    except nx.NetworkXUnfeasible:
+        return "Graph has a cycle and can't be sorted topologically."
+ 
+# apply topological sorting to the graph for the courses
+sorted_courses = top_sort(G)
+print("Topological Sort Order (Course Schedule):")
+print(sorted_courses)
+
+# Result
+# Topological Sort Order (Course Schedule):
+
+# ['CMPSC 122', 'CMPSC 132', 'CMPSC 121', 'MATH 141', 
+# 'CMPSC 330', 'ENGL 202C', 'CMPSC 221', 'CMPSC 360', 
+# 'CMPSC 312', 'CMPSC 462', 'CMPSC 469', 'CMPSC 460', 
+# 'CMPSC 463', 'CMPSC 472', 'CMPSC 487W', 'CMPSC 470', 
+# 'CMPSC 488']
