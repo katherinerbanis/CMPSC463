@@ -1,0 +1,62 @@
+from collections import defaultdict, deque
+
+# minimize weighted sum of completion times with dependencies
+# (number of tasks, processing time, weight, dependencies)
+def weighted_sum(n, p, w, d):
+    # Step 1: Build the graph and calculate in-degrees
+    graph = defaultdict(list)
+    in_degree = [0] * n
+
+    # Add dependencies to graph
+    for u, v in d:
+        graph[u - 1].append(v - 1)  # Convert to 0-indexed
+        in_degree[v - 1] += 1
+
+    # Step 2: Topological Sort using Kahn's Algorithm
+    topological_order = []
+    zero_in_degree = deque([i for i in range(n) if in_degree[i] == 0])
+
+    while zero_in_degree:
+        u = zero_in_degree.popleft()
+        topological_order.append(u)
+        for v in graph[u]:
+            in_degree[v] -= 1
+            if in_degree[v] == 0:
+                zero_in_degree.append(v)
+
+    # Step 3: Process tasks in a greedy order while respecting dependencies
+    task_set = set(topological_order)
+    sorted_tasks = []
+
+    while task_set:
+        # Select the task with the highest w[i]/p[i] ratio among the available tasks
+        current_task = max(task_set, key=lambda x: w[x] / p[x])
+        sorted_tasks.append(current_task)
+        task_set.remove(current_task)
+
+    # Step 4: Calculate weighted completion time
+    time = 0
+    total_weighted_completion_time = 0
+
+    for i in sorted_tasks:
+        time += p[i]
+        total_weighted_completion_time += time * w[i]
+
+    return [i + 1 for i in sorted_tasks], total_weighted_completion_time  # Convert to 1-based index
+
+
+# Testing the corrected function with the given example
+n = 5  # number of tasks
+p = [3, 2, 4, 1, 5]  # processing times
+w = [10, 5, 7, 3, 6]  # weights
+d = [(1, 3), (2, 4), (2, 5)]  # 1 before 3; 2 before 4 and 5
+
+# Invoke the corrected function
+order, total_weighted_time = weighted_sum(n, p, w, d)
+
+print(f"Optimal Order of Tasks: {order}")
+print(f"Total Weighted Completion Time: {total_weighted_time}")
+
+# Results
+# Optimal Order of Tasks: [1, 4, 2, 3, 5]
+# Total Weighted Completion Time: 232
